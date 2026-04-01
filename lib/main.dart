@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -36,11 +37,18 @@ class PlayerStats {
   int shards;
   int runShards;
   int floor;
+  int level;
+  int experience;
   int vigorLevel;
   int siphonLevel;
   int oracleLevel;
   int shieldLevel;
+  int armorLevel;
+  int focusLevel;
+  int wealthLevel;
   bool shieldReady;
+  int highestFloor;
+  int checkpointFloor;
 
   PlayerStats({
     this.maxHp = 3,
@@ -48,189 +56,309 @@ class PlayerStats {
     this.shards = 0,
     this.runShards = 0,
     this.floor = 1,
+    this.level = 1,
+    this.experience = 0,
     this.vigorLevel = 0,
     this.siphonLevel = 0,
     this.oracleLevel = 0,
     this.shieldLevel = 0,
+    this.armorLevel = 0,
+    this.focusLevel = 0,
+    this.wealthLevel = 0,
     this.shieldReady = false,
+    this.highestFloor = 1,
+    this.checkpointFloor = 1,
   });
 
   bool get hasSiphon => siphonLevel > 0;
   bool get hasOracle => oracleLevel > 0;
   bool get hasShield => shieldLevel > 0;
+  bool get hasArmor => armorLevel > 0;
+  bool get hasFocus => focusLevel > 0;
+  bool get hasWealth => wealthLevel > 0;
+
+  int get expToNextLevel => 100 * level;
+  double get expProgress => experience / expToNextLevel;
 
   void startRun() {
     currentHp = maxHp;
-    floor = 1;
+    floor = max(1, checkpointFloor);
     runShards = 0;
     shieldReady = hasShield;
   }
+
+  void gainExp(int amount) {
+    experience += amount;
+    while (experience >= expToNextLevel) {
+      experience -= expToNextLevel;
+      levelUp();
+    }
+  }
+
+  void levelUp() {
+    level++;
+    maxHp += 1;
+    currentHp = maxHp;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'maxHp': maxHp,
+    'currentHp': currentHp,
+    'shards': shards,
+    'level': level,
+    'experience': experience,
+    'vigorLevel': vigorLevel,
+    'siphonLevel': siphonLevel,
+    'oracleLevel': oracleLevel,
+    'shieldLevel': shieldLevel,
+    'armorLevel': armorLevel,
+    'focusLevel': focusLevel,
+    'wealthLevel': wealthLevel,
+    'highestFloor': highestFloor,
+    'checkpointFloor': checkpointFloor,
+  };
+
+  static PlayerStats fromJson(Map<String, dynamic> json) => PlayerStats(
+    maxHp: json['maxHp'] ?? 3,
+    currentHp: json['currentHp'] ?? 3,
+    shards: json['shards'] ?? 0,
+    level: json['level'] ?? 1,
+    experience: json['experience'] ?? 0,
+    vigorLevel: json['vigorLevel'] ?? 0,
+    siphonLevel: json['siphonLevel'] ?? 0,
+    oracleLevel: json['oracleLevel'] ?? 0,
+    shieldLevel: json['shieldLevel'] ?? 0,
+    armorLevel: json['armorLevel'] ?? 0,
+    focusLevel: json['focusLevel'] ?? 0,
+    wealthLevel: json['wealthLevel'] ?? 0,
+    highestFloor: json['highestFloor'] ?? 1,
+    checkpointFloor: json['checkpointFloor'] ?? 1,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────
-//  BANCO DE QUESTÕES
+//  BANCO DE QUESTÕES - FLUTTER & MOBILE HISTORY
 // ─────────────────────────────────────────────────────────────
 
 class QuestionBank {
   static final List<Question> _all = [
+    // Tier 1 - Flutter Basics
     const Question(
-      prompt: 'Quanto é 7 × 8?',
-      options: ['54', '56', '63', '48'],
+      prompt: 'Em que ano o Flutter foi anunciado pela primeira vez?',
+      options: ['2015', '2017', '2018', '2016'],
       correctIndex: 1,
-      explanation: '7 × 8 = 56.',
+      explanation: 'Flutter foi anunciado em 2015 no Dart Developer Summit.',
       tier: 1,
     ),
     const Question(
-      prompt: 'Qual é o maior planeta do Sistema Solar?',
-      options: ['Saturno', 'Netuno', 'Júpiter', 'Urano'],
-      correctIndex: 2,
-      explanation: 'Júpiter tem massa maior que a de todos os outros planetas somados.',
-      tier: 1,
-    ),
-    const Question(
-      prompt: 'Quantos lados tem um hexágono?',
-      options: ['5', '7', '8', '6'],
-      correctIndex: 3,
-      explanation: '"Hex" vem do grego e significa seis.',
-      tier: 1,
-    ),
-    const Question(
-      prompt: 'Em que continente fica o Egito?',
-      options: ['Ásia', 'Europa', 'África', 'Oriente Médio'],
-      correctIndex: 2,
-      explanation: 'O Egito ocupa o nordeste do continente africano.',
-      tier: 1,
-    ),
-    const Question(
-      prompt: 'Qual é a capital do Brasil?',
-      options: ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador'],
-      correctIndex: 2,
-      explanation: 'Brasília é capital federal desde abril de 1960.',
-      tier: 1,
-    ),
-    const Question(
-      prompt: 'Quem escreveu Dom Casmurro?',
-      options: ['José de Alencar', 'Machado de Assis', 'Clarice Lispector', 'Carlos Drummond'],
+      prompt: 'Qual empresa criou o Flutter?',
+      options: ['Facebook', 'Google', 'Apple', 'Microsoft'],
       correctIndex: 1,
-      explanation: 'Machado de Assis publicou Dom Casmurro em 1899.',
+      explanation: 'Google desenvolveu o Flutter como um framework open-source.',
+      tier: 1,
+    ),
+    const Question(
+      prompt: 'Flutter usa qual linguagem de programação?',
+      options: ['Kotlin', 'Swift', 'Dart', 'Java'],
+      correctIndex: 2,
+      explanation: 'Dart é a linguagem oficial usada no desenvolvimento com Flutter.',
+      tier: 1,
+    ),
+    const Question(
+      prompt: 'Qual é o widget básico em Flutter que cria uma coluna?',
+      options: ['Row', 'Column', 'Stack', 'Container'],
+      correctIndex: 1,
+      explanation: 'Column organiza widgets verticalmente, Row organiza horizontalmente.',
+      tier: 1,
+    ),
+    const Question(
+      prompt: 'O que permite Flutter funcionar em múltiplas plataformas?',
+      options: ['WebView', 'Mecanismo de renderização Skia', 'JVM', 'LLVM'],
+      correctIndex: 1,
+      explanation: 'Flutter usa Skia para renderização rápida em todas as plataformas.',
+      tier: 1,
+    ),
+    // Tier 2 - Mobile History
+    const Question(
+      prompt: 'Qual foi o primeiro smartphone?',
+      options: ['iPhone', 'BlackBerry', 'Simon', 'Nokia 9000'],
+      correctIndex: 2,
+      explanation: 'Simon, lançado em 1992, é considerado o primeiro smartphone.',
       tier: 2,
     ),
     const Question(
-      prompt: 'Qual gás as plantas absorvem durante a fotossíntese?',
-      options: ['Oxigênio', 'Nitrogênio', 'Dióxido de Carbono', 'Hidrogênio'],
-      correctIndex: 2,
-      explanation: 'As plantas absorvem CO₂ e liberam O₂ como subproduto.',
+      prompt: 'Em que ano foi lançado o primeiro iPhone?',
+      options: ['2005', '2007', '2008', '2006'],
+      correctIndex: 1,
+      explanation: 'Steve Jobs apresentou o iPhone em junho de 2007.',
       tier: 2,
     ),
     const Question(
-      prompt: 'Qual é o menor país do mundo em área?',
-      options: ['Mônaco', 'San Marino', 'Vaticano', 'Liechtenstein'],
+      prompt: 'Qual sistema operacional mobile foi lançado primeiro?',
+      options: ['iOS', 'Android', 'Windows Mobile', 'Symbian'],
       correctIndex: 2,
-      explanation: 'O Vaticano tem apenas 0,44 km².',
+      explanation: 'Windows Mobile foi o primeiro, mas Android foi o primeiro open-source.',
       tier: 2,
     ),
     const Question(
-      prompt: 'Qual é a fórmula química da água?',
-      options: ['H₃O', 'HO₂', 'H₂O', 'OH'],
-      correctIndex: 2,
-      explanation: 'Dois átomos de hidrogênio e um de oxigênio formam H₂O.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Em que ano começou a Revolução Francesa?',
-      options: ['1776', '1789', '1804', '1815'],
-      correctIndex: 1,
-      explanation: 'A queda da Bastilha em julho de 1789 marcou o início.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Qual é o elemento mais abundante no universo?',
-      options: ['Oxigênio', 'Carbono', 'Hélio', 'Hidrogênio'],
-      correctIndex: 3,
-      explanation: 'O hidrogênio representa cerca de 75% da matéria bariônica.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Quantos ossos tem o esqueleto humano adulto?',
-      options: ['186', '206', '256', '306'],
-      correctIndex: 1,
-      explanation: 'Adultos têm 206 ossos; bebês nascem com aproximadamente 270.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Qual é o símbolo do ouro na tabela periódica?',
-      options: ['Go', 'Or', 'Ou', 'Au'],
-      correctIndex: 3,
-      explanation: '"Au" vem do latim Aurum, número atômico 79.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'O que estuda a sismologia?',
-      options: ['Vulcões', 'Terremotos', 'Oceanos', 'Clima'],
-      correctIndex: 1,
-      explanation: 'A sismologia analisa terremotos e a propagação de ondas sísmicas.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Qual filósofo cunhou "Penso, logo existo"?',
-      options: ['Sócrates', 'Platão', 'Aristóteles', 'René Descartes'],
-      correctIndex: 3,
-      explanation: '"Cogito, ergo sum" aparece no Discurso do Método de 1637.',
-      tier: 3,
-    ),
-    const Question(
-      prompt: 'Qual é a velocidade aproximada da luz no vácuo?',
-      options: ['300 000 km/s', '150 000 km/s', '450 000 km/s', '200 000 km/s'],
+      prompt: 'Quantos cores tinha o iPhone original?',
+      options: ['Nenhum (preto e branco)', 'Variante de cinza', '8 cores', '256 cores'],
       correctIndex: 0,
-      explanation: '≈ 299 792 km/s, arredondado para 300 000 km/s.',
-      tier: 4,
+      explanation: 'O iPhone original tinha uma tela monocromática antes do 3G.',
+      tier: 2,
     ),
     const Question(
-      prompt: 'O que define um número primo?',
+      prompt: 'Qual foi a primeira versão do Android?',
+      options: ['Android 1.0', 'Android 2.0', 'Android 1.5', 'Android 1.6'],
+      correctIndex: 0,
+      explanation: 'Android 1.0 foi lançado em setembro de 2008.',
+      tier: 2,
+    ),
+    // Tier 3 - Flutter Advanced
+    const Question(
+      prompt: 'O que é um StatefulWidget em Flutter?',
       options: [
-        'Divisível apenas por 1 e por ele mesmo',
-        'Divisível por 2',
-        'Possui raiz quadrada exata',
-        'Múltiplo de 3',
+        'Widget que não muda',
+        'Widget que pode mudar de estado durante seu ciclo de vida',
+        'Widget importado de pacotes',
+        'Widget que só funciona web'
+      ],
+      correctIndex: 1,
+      explanation: 'StatefulWidget pode mudar seu estado interno chamando setState().',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'Qual é o método chamado quando um Widget é criado?',
+      options: ['build()', 'initState()', 'dispose()', 'didChangeDependencies()'],
+      correctIndex: 1,
+      explanation: 'initState() é chamado uma vez quando o State é criado.',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'Para que serve o Provider em Flutter?',
+      options: [
+        'Gerenciar estado de forma simples e reativa',
+        'Fazer requisições HTTP',
+        'Desenhar em Canvas',
+        'Compilar código'
       ],
       correctIndex: 0,
-      explanation: 'Números primos têm exatamente dois divisores naturais.',
+      explanation: 'Provider é uma biblioteca popular para gerenciamento de estado reativo.',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'O que é Hot Reload em Flutter?',
+      options: [
+        'Reiniciar a aplicação completamente',
+        'Atualizar código sem perder estado do app',
+        'Compilar o APK',
+        'Sincronizar com servidor'
+      ],
+      correctIndex: 1,
+      explanation: 'Hot Reload permite desenvolvimento rápido injecting código sem reiniciar.',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'Qual widget Flutter cria um layout de grade?',
+      options: ['GridView', 'Table', 'Row', 'Wrap'],
+      correctIndex: 0,
+      explanation: 'GridView cria uma grade responsiva de widgets.',
+      tier: 3,
+    ),
+    // Tier 4 - Mobile Evolution
+    const Question(
+      prompt: 'Quantos anos levou entre o primeiro iPhone e o 5G em smartphones?',
+      options: ['10 anos', '12 anos', '13 anos', '15 anos'],
+      correctIndex: 2,
+      explanation: 'iPhone foi 2007, primeiros 5G phones foram 2020.',
       tier: 4,
     ),
     const Question(
-      prompt: 'Como as estrelas produzem energia?',
-      options: ['Fissão nuclear', 'Fusão nuclear', 'Combustão', 'Oxidação'],
+      prompt: 'Qual smartphone foi o primeiro com câmera de 64MP?',
+      options: ['Samsung Galaxy S20', 'Mi 9T Pro', 'Samsung Galaxy S9+', 'OnePlus 7'],
       correctIndex: 1,
-      explanation: 'Núcleos de hidrogênio se fundem em hélio, liberando enorme energia.',
+      explanation: 'Xiaomi Mi 9T Pro foi pioneiro com 64MP sensor principal.',
       tier: 4,
     ),
     const Question(
-      prompt: 'O que carrega as instruções genéticas no DNA?',
-      options: ['Proteínas', 'Lipídeos', 'Sequência de bases nitrogenadas', 'Carboidratos'],
-      correctIndex: 2,
-      explanation: 'A ordem das bases A, T, G, C codifica todas as informações genéticas.',
+      prompt: 'Em que ano foi lançado o Android Market (Google Play)?',
+      options: ['2008', '2010', '2012', '2014'],
+      correctIndex: 0,
+      explanation: 'Android Market foi lançado em 2008, rebatizado como Google Play em 2012.',
+      tier: 4,
+    ),
+    const Question(
+      prompt: 'Qual foi a primeira linguagem de programação para apps Android?',
+      options: ['Java', 'Kotlin', 'C++', 'Python'],
+      correctIndex: 0,
+      explanation: 'Java era a única opção oficial até Kotlin ser suportado.',
+      tier: 4,
+    ),
+    // Tier 5 - Flutter Architecture
+    const Question(
+      prompt: 'Qual é a estrutura de camadas do Flutter?',
+      options: [
+        'Framework, Engine, Embedder',
+        'Frontend, Backend, Database',
+        'UI, Logic, State',
+        'Client, Server, Network'
+      ],
+      correctIndex: 0,
+      explanation: 'Flutter tem Framework (Dart), Engine (C++), e Embedders (iOS/Android).',
       tier: 5,
     ),
     const Question(
-      prompt: 'No Teorema de Pitágoras, qual relação vale para triângulos retângulos?',
-      options: ['a + b = c', 'a² + b² = c²', 'a² × b² = c²', 'a³ + b³ = c³'],
+      prompt: 'O que é o Skia engine no Flutter?',
+      options: [
+        'Motor JavaScript',
+        'Mecanismo de renderização gráfica 2D/3D',
+        'Compilador Dart',
+        'Banco de dados local'
+      ],
       correctIndex: 1,
-      explanation: 'c é a hipotenusa e a, b são os catetos. Pitágoras, séc. VI a.C.',
+      explanation: 'Skia é responsável pela renderização rápida de gráficos.',
       tier: 5,
     ),
     const Question(
-      prompt: 'Qual lei de Newton descreve que toda ação gera reação igual e oposta?',
-      options: ['Primeira Lei', 'Segunda Lei', 'Terceira Lei', 'Lei da Gravitação Universal'],
-      correctIndex: 2,
-      explanation: 'O Princípio da Ação e Reação é a Terceira Lei de Newton.',
+      prompt: 'Qual padrão arquitetural Flutter recomenda para apps complexos?',
+      options: ['MVC', 'BLoC', 'MVVM', 'Todos os anteriores'],
+      correctIndex: 3,
+      explanation: 'Flutter é flexível e suporta vários padrões, BLoC é popular.',
+      tier: 5,
+    ),
+    const Question(
+      prompt: 'O que é a árvore de widgets em Flutter?',
+      options: [
+        'Uma estrutura de dados em árvore que representa a UI',
+        'Um banco de dados',
+        'Uma biblioteca de componentes',
+        'Um framework CSS'
+      ],
+      correctIndex: 0,
+      explanation: 'A árvore de widgets descreve toda a UI da aplicação recursivamente.',
+      tier: 5,
+    ),
+    const Question(
+      prompt: 'Em que linguagem é escrito o Flutter Engine?',
+      options: ['Dart', 'C++', 'Java', 'Swift'],
+      correctIndex: 1,
+      explanation: 'O Engine é implementado principalmente em C++ para performance.',
       tier: 5,
     ),
   ];
 
   static Question forFloor(int floor) {
-    final maxTier = floor <= 2 ? 1 : floor <= 4 ? 3 : floor <= 7 ? 4 : 5;
-    final pool = _all.where((q) => q.tier <= maxTier).toList()..shuffle();
+    final difficulty = _calculateDifficulty(floor);
+    final pool = _all.where((q) => q.tier <= difficulty).toList()..shuffle();
     return pool.first;
+  }
+
+  static int _calculateDifficulty(int floor) {
+    if (floor <= 3) return 1;
+    if (floor <= 6) return 2;
+    if (floor <= 10) return 3;
+    if (floor <= 15) return 4;
+    return 5;
   }
 }
 
@@ -250,6 +378,8 @@ class DT {
   static const green   = Color(0xFF3BAA78);
   static const amber   = Color(0xFFD4882A);
   static const muted   = Color(0xFF55556A);
+  static const purple  = Color(0xFF9B6DD4);
+  static const blue    = Color(0xFF4A9FD8);
 
   static const caption = TextStyle(
     color: Color(0xFF6E6E88),
@@ -308,15 +438,27 @@ class _GameControllerState extends State<GameController> {
   void _openSkillTree() => setState(() => _state = GameState.skillTree);
 
   void _onDied() {
+    if (_player.floor > _player.checkpointFloor) {
+      _player.checkpointFloor = _player.floor;
+    }
     _player.shards += _player.runShards;
     setState(() => _state = GameState.gameOver);
   }
 
-  void _onFloorCleared(int earned) {
+  void _onFloorCleared(int earned, int expEarned) {
     _player.runShards += earned;
+    _player.gainExp(expEarned);
+
+    if (_player.floor > _player.highestFloor) {
+      _player.highestFloor = _player.floor;
+    }
+
     _player.floor++;
-    if (_player.floor > 10) {
+    if (_player.floor > 20) {
       _player.shards += _player.runShards;
+      if (_player.floor > _player.checkpointFloor) {
+        _player.checkpointFloor = _player.floor;
+      }
       setState(() => _state = GameState.victory);
     } else {
       setState(() {});
@@ -414,7 +556,6 @@ class _MenuScreenState extends State<MenuScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Ícone central
                   AnimatedBuilder(
                     animation: _glow,
                     builder: (_, __) => Opacity(
@@ -439,7 +580,6 @@ class _MenuScreenState extends State<MenuScreen>
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Título
                   ShaderMask(
                     shaderCallback: (r) => const LinearGradient(
                       colors: [DT.gold, DT.goldL, DT.gold],
@@ -466,14 +606,17 @@ class _MenuScreenState extends State<MenuScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  // Badges de upgrades ativos
                   _UpgradeBadges(player: widget.player),
                   if (widget.player.vigorLevel > 0 ||
                       widget.player.siphonLevel > 0 ||
                       widget.player.oracleLevel > 0 ||
-                      widget.player.shieldLevel > 0)
+                      widget.player.shieldLevel > 0 ||
+                      widget.player.armorLevel > 0 ||
+                      widget.player.focusLevel > 0 ||
+                      widget.player.wealthLevel > 0)
                     const SizedBox(height: 24),
-                  // Botões
+                  _LevelBar(player: widget.player),
+                  const SizedBox(height: 24),
                   _PrimaryBtn(
                     icon: Icons.arrow_downward_rounded,
                     label: 'DESCER AO CALABOUÇO',
@@ -490,7 +633,6 @@ class _MenuScreenState extends State<MenuScreen>
                     ),
                   ],
                   const SizedBox(height: 40),
-                  // Rodapé de stats
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -499,11 +641,17 @@ class _MenuScreenState extends State<MenuScreen>
                         iconColor: DT.red,
                         label: '${widget.player.maxHp} vidas',
                       ),
-                      const SizedBox(width: 24),
+                      const SizedBox(width: 12),
                       _MiniStat(
                         icon: Icons.diamond_outlined,
                         iconColor: DT.cyan,
                         label: '${widget.player.shards} fragmentos',
+                      ),
+                      const SizedBox(width: 12),
+                      _MiniStat(
+                        icon: Icons.trending_up_rounded,
+                        iconColor: DT.blue,
+                        label: 'Andar ${widget.player.highestFloor}',
                       ),
                     ],
                   ),
@@ -512,6 +660,61 @@ class _MenuScreenState extends State<MenuScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LevelBar extends StatelessWidget {
+  final PlayerStats player;
+  const _LevelBar({required this.player});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: DT.surface,
+        border: Border.all(color: DT.blue.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.star_rounded, size: 16, color: DT.blue),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Nível ${player.level}',
+                    style: const TextStyle(
+                      color: DT.blue,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${player.experience}/${player.expToNextLevel} XP',
+                style: DT.caption.copyWith(fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              minHeight: 6,
+              value: player.expProgress,
+              backgroundColor: DT.blue.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation(DT.blue.withOpacity(0.6)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -532,6 +735,13 @@ class _UpgradeBadges extends StatelessWidget {
       items.add((icon: Icons.visibility_rounded, label: 'Oráculo', color: DT.amber));
     if (player.shieldLevel > 0)
       items.add((icon: Icons.shield_rounded, label: 'Escudo', color: DT.violet));
+    if (player.armorLevel > 0)
+      items.add((icon: Icons.security_rounded, label: 'Armadura', color: DT.purple));
+    if (player.focusLevel > 0)
+      items.add((icon: Icons.psychology_rounded, label: 'Foco', color: DT.blue));
+    if (player.wealthLevel > 0)
+      items.add((icon: Icons.attach_money_rounded, label: 'Riqueza', color: DT.gold));
+
     if (items.isEmpty) return const SizedBox.shrink();
 
     return Wrap(
@@ -636,7 +846,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  SKILL TREE SCREEN
+//  SKILL TREE SCREEN (ENHANCED SHOP)
 // ─────────────────────────────────────────────────────────────
 
 class SkillTreeScreen extends StatefulWidget {
@@ -654,12 +864,15 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
 
   int get _vigorCost  => (p.vigorLevel  + 1) * 3;
   int get _siphonCost => (p.siphonLevel + 1) * 4;
+  int get _armorCost  => (p.armorLevel + 1) * 5;
+  int get _focusCost  => (p.focusLevel + 1) * 6;
+  int get _wealthCost => (p.wealthLevel + 1) * 8;
 
   void _buy(String id) {
     setState(() {
       switch (id) {
         case 'vigor':
-          if (p.vigorLevel < 3 && p.shards >= _vigorCost) {
+          if (p.vigorLevel < 5 && p.shards >= _vigorCost) {
             p.shards -= _vigorCost;
             p.vigorLevel++;
             p.maxHp = 3 + p.vigorLevel;
@@ -678,6 +891,21 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
           if (p.shieldLevel < 1 && p.shards >= 10) {
             p.shards -= 10;
             p.shieldLevel = 1;
+          }
+        case 'armor':
+          if (p.armorLevel < 3 && p.shards >= _armorCost) {
+            p.shards -= _armorCost;
+            p.armorLevel++;
+          }
+        case 'focus':
+          if (p.focusLevel < 2 && p.shards >= _focusCost) {
+            p.shards -= _focusCost;
+            p.focusLevel++;
+          }
+        case 'wealth':
+          if (p.wealthLevel < 3 && p.shards >= _wealthCost) {
+            p.shards -= _wealthCost;
+            p.wealthLevel++;
           }
       }
     });
@@ -735,7 +963,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
                 child: Text(
-                  'Os fragmentos persistem mesmo depois da morte.',
+                  'Os fragmentos persistem mesmo depois da morte. Mude-se após andar 10!',
                   style: DT.caption.copyWith(fontSize: 11),
                 ),
               ),
@@ -747,12 +975,11 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       icon: Icons.favorite_rounded,
                       color: DT.red,
                       name: 'Vigor do Erudito',
-                      description:
-                      'Seu corpo aprende a suportar mais punições. Aumenta a vida máxima em +1.',
+                      description: 'Aumenta vida máxima em +1 por nível.',
                       level: p.vigorLevel,
-                      maxLevel: 3,
+                      maxLevel: 5,
                       cost: _vigorCost,
-                      canBuy: p.vigorLevel < 3 && p.shards >= _vigorCost,
+                      canBuy: p.vigorLevel < 5 && p.shards >= _vigorCost,
                       onBuy: () => _buy('vigor'),
                     ),
                     const SizedBox(height: 10),
@@ -760,8 +987,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       icon: Icons.water_drop_rounded,
                       color: DT.green,
                       name: 'Sifão de Vida',
-                      description:
-                      'Respostas corretas convertem o conhecimento absorvido em cura.',
+                      description: 'Respostas corretas curam +1 vida por nível.',
                       level: p.siphonLevel,
                       maxLevel: 3,
                       cost: _siphonCost,
@@ -773,8 +999,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       icon: Icons.visibility_rounded,
                       color: DT.amber,
                       name: 'Visão do Oráculo',
-                      description:
-                      'Enxerga através das mentiras. Uma opção falsa some de cada enigma.',
+                      description: 'Uma opção falsa some de cada enigma.',
                       level: p.oracleLevel,
                       maxLevel: 1,
                       cost: 8,
@@ -786,13 +1011,48 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       icon: Icons.shield_rounded,
                       color: DT.violet,
                       name: 'Escudo Arcano',
-                      description:
-                      'Absorve o impacto do primeiro erro a cada descida ao calabouço.',
+                      description: 'Absorve o primeiro erro a cada descida.',
                       level: p.shieldLevel,
                       maxLevel: 1,
                       cost: 10,
                       canBuy: p.shieldLevel < 1 && p.shards >= 10,
                       onBuy: () => _buy('shield'),
+                    ),
+                    const SizedBox(height: 10),
+                    _SkillCard(
+                      icon: Icons.security_rounded,
+                      color: DT.purple,
+                      name: 'Armadura do Conhecimento',
+                      description: 'Reduz dano em -1 por nível (máx. 1).',
+                      level: p.armorLevel,
+                      maxLevel: 3,
+                      cost: _armorCost,
+                      canBuy: p.armorLevel < 3 && p.shards >= _armorCost,
+                      onBuy: () => _buy('armor'),
+                    ),
+                    const SizedBox(height: 10),
+                    _SkillCard(
+                      icon: Icons.psychology_rounded,
+                      color: DT.blue,
+                      name: 'Foco Mental',
+                      description: 'Aumenta XP ganho em 25% por nível.',
+                      level: p.focusLevel,
+                      maxLevel: 2,
+                      cost: _focusCost,
+                      canBuy: p.focusLevel < 2 && p.shards >= _focusCost,
+                      onBuy: () => _buy('focus'),
+                    ),
+                    const SizedBox(height: 10),
+                    _SkillCard(
+                      icon: Icons.attach_money_rounded,
+                      color: DT.gold,
+                      name: 'Ganância do Tesouro',
+                      description: 'Aumenta fragmentos ganhos em 25% por nível.',
+                      level: p.wealthLevel,
+                      maxLevel: 3,
+                      cost: _wealthCost,
+                      canBuy: p.wealthLevel < 3 && p.shards >= _wealthCost,
+                      onBuy: () => _buy('wealth'),
                     ),
                   ],
                 ),
@@ -956,7 +1216,7 @@ class _SkillCard extends StatelessWidget {
 class DungeonScreen extends StatefulWidget {
   final PlayerStats player;
   final VoidCallback onDied;
-  final Function(int) onFloorCleared;
+  final Function(int, int) onFloorCleared;
   final Function(int) onHpChanged;
 
   const DungeonScreen({
@@ -1033,18 +1293,36 @@ class _DungeonScreenState extends State<DungeonScreen>
 
   Color get _accent {
     final f = p.floor;
-    if (f <= 2) return DT.green;
-    if (f <= 4) return DT.amber;
-    if (f <= 7) return DT.red;
-    return DT.violet;
+    if (f <= 3) return DT.green;
+    if (f <= 6) return DT.amber;
+    if (f <= 10) return DT.red;
+    if (f <= 15) return DT.violet;
+    return DT.blue;
   }
 
   IconData get _floorIcon {
     final f = p.floor;
-    if (f <= 2) return Icons.forest_rounded;
-    if (f <= 4) return Icons.local_fire_department_rounded;
-    if (f <= 7) return Icons.warning_amber_rounded;
-    return Icons.remove_red_eye_rounded;
+    if (f <= 3) return Icons.forest_rounded;
+    if (f <= 6) return Icons.local_fire_department_rounded;
+    if (f <= 10) return Icons.warning_amber_rounded;
+    if (f <= 15) return Icons.remove_red_eye_rounded;
+    return Icons.psychology_rounded;
+  }
+
+  int _calculateReward() {
+    int base = max(1, p.floor ~/ 2 + 1);
+    if (p.wealthLevel > 0) {
+      base = (base * (1 + 0.25 * p.wealthLevel)).toInt();
+    }
+    return base;
+  }
+
+  int _calculateExp() {
+    int base = 10 * p.floor;
+    if (p.focusLevel > 0) {
+      base = (base * (1 + 0.25 * p.focusLevel)).toInt();
+    }
+    return base;
   }
 
   void _answer(int idx) {
@@ -1056,10 +1334,11 @@ class _DungeonScreenState extends State<DungeonScreen>
 
       if (ok) {
         _states[idx] = true;
-        final earned = max(1, p.floor ~/ 2 + 1);
+        final earned = _calculateReward();
+        final exp = _calculateExp();
         _feedbackOk = true;
         _feedbackIcon = Icons.check_circle_rounded;
-        _feedback = '+$earned fragmentos  —  Correto.';
+        _feedback = '+$earned fragmentos  +$exp XP  —  Correto.';
 
         if (p.hasSiphon && p.currentHp < p.maxHp) {
           p.currentHp = min(p.maxHp, p.currentHp + p.siphonLevel);
@@ -1069,7 +1348,7 @@ class _DungeonScreenState extends State<DungeonScreen>
 
         Future.delayed(const Duration(milliseconds: 1400), () {
           if (!mounted) return;
-          widget.onFloorCleared(earned);
+          widget.onFloorCleared(earned, exp);
           _entryCtrl.reset();
           setState(_load);
           _entryCtrl.forward();
@@ -1078,13 +1357,18 @@ class _DungeonScreenState extends State<DungeonScreen>
         _states[idx] = false;
         _states[_q.correctIndex] = true;
 
+        int damage = 1;
+        if (p.hasArmor) {
+          damage = max(0, damage - min(1, p.armorLevel));
+        }
+
         if (p.shieldReady) {
           p.shieldReady = false;
           _feedbackOk = true;
           _feedbackIcon = Icons.shield_rounded;
           _feedback = 'Escudo Arcano ativado  —  o golpe foi absorvido.';
         } else {
-          p.currentHp--;
+          p.currentHp -= damage;
           widget.onHpChanged(p.currentHp);
           _feedbackOk = false;
           _feedbackIcon = Icons.close_rounded;
@@ -1130,7 +1414,6 @@ class _DungeonScreenState extends State<DungeonScreen>
             child: Column(
               children: [
                 _TopBar(player: p, accent: _accent),
-                // Indicador de andar
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
@@ -1150,7 +1433,6 @@ class _DungeonScreenState extends State<DungeonScreen>
                     ],
                   ),
                 ),
-                // Área de jogo
                 Expanded(
                   child: FadeTransition(
                     opacity: _entryAnim,
@@ -1164,7 +1446,6 @@ class _DungeonScreenState extends State<DungeonScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Caixa da pergunta
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(22),
@@ -1193,7 +1474,6 @@ class _DungeonScreenState extends State<DungeonScreen>
                               ),
                             ),
                             const SizedBox(height: 18),
-                            // Opções
                             ...List.generate(_opts.length, (i) {
                               if (_opts[i].isEmpty) return const SizedBox.shrink();
                               return _ChoiceBtn(
@@ -1204,7 +1484,6 @@ class _DungeonScreenState extends State<DungeonScreen>
                               );
                             }),
                             const SizedBox(height: 14),
-                            // Feedback
                             AnimatedOpacity(
                               opacity: _feedback.isEmpty ? 0 : 1,
                               duration: const Duration(milliseconds: 220),
@@ -1275,7 +1554,6 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // Corações
           Row(
             children: List.generate(player.maxHp, (i) {
               final filled = i < player.currentHp;
@@ -1295,7 +1573,6 @@ class _TopBar extends StatelessWidget {
             }),
           ),
           const Spacer(),
-          // Escudo
           if (player.hasShield)
             Padding(
               padding: const EdgeInsets.only(right: 10),
@@ -1305,7 +1582,6 @@ class _TopBar extends StatelessWidget {
                 child: const Icon(Icons.shield_rounded, size: 20, color: DT.violet),
               ),
             ),
-          // Fragmentos da run
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
@@ -1493,6 +1769,12 @@ class GameOverScreen extends StatelessWidget {
                     label: 'Total acumulado',
                     value: '${player.shards}',
                   ),
+                  _StatRow(
+                    icon: Icons.trending_up_rounded,
+                    color: DT.blue,
+                    label: 'Checkpoint',
+                    value: 'Andar ${player.checkpointFloor}',
+                  ),
                   const SizedBox(height: 40),
                   _PrimaryBtn(
                     icon: Icons.account_tree_outlined,
@@ -1633,6 +1915,12 @@ class VictoryScreen extends StatelessWidget {
                     color: DT.gold,
                     label: 'Total acumulado',
                     value: '${player.shards}',
+                  ),
+                  _StatRow(
+                    icon: Icons.star_rounded,
+                    color: DT.blue,
+                    label: 'Nível',
+                    value: '${player.level}',
                   ),
                   const SizedBox(height: 40),
                   _PrimaryBtn(
