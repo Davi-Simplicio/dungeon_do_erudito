@@ -780,8 +780,8 @@ class InventoryScreen extends StatefulWidget {
 
   const InventoryScreen({
     super.key,
-    required this.player,
-    required widget.onBack,
+    required this.player, // FIX: use 'this'
+    required this.onBack, // FIX: use 'this'
   });
 
   @override
