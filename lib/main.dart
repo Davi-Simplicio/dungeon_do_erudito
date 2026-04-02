@@ -599,11 +599,12 @@ class QuestionBank {
         .map((e) => (index: e.key, question: e.value))
         .toList()
       ..shuffle();
-    
+
     if (pool.isEmpty) {
       // Se acabar as perguntas, limpa o histórico
       usedIndices.clear();
-      return _all.where((q) => q.tier <= difficulty).toList()..shuffle();
+      // FIX: Added .first to return a Question instead of a List<Question>
+      return (_all.where((q) => q.tier <= difficulty).toList()..shuffle()).first;
     }
     
     usedIndices.add(pool.first.index);
@@ -780,7 +781,7 @@ class InventoryScreen extends StatefulWidget {
   const InventoryScreen({
     super.key,
     required this.player,
-    required this.onBack,
+    required widget.onBack,
   });
 
   @override
