@@ -13,7 +13,7 @@ void main() {
 //  MODELS
 // ─────────────────────────────────────────────────────────────
 
-enum GameState { menu, skillTree, dungeon, gameOver, victory }
+enum GameState { menu, skillTree, dungeon, gameOver, victory, inventory }
 
 class Question {
   final String prompt;
@@ -29,6 +29,68 @@ class Question {
     required this.explanation,
     required this.tier,
   });
+}
+
+class Chest {
+  final int level;
+  final int shards;
+  final String rarity;
+
+  Chest({required this.level, required this.shards, required this.rarity});
+
+  factory Chest.common(int level) => Chest(
+    level: level,
+    shards: 15 + (level * 5),
+    rarity: 'comum',
+  );
+
+  factory Chest.rare(int level) => Chest(
+    level: level,
+    shards: 35 + (level * 8),
+    rarity: 'rara',
+  );
+
+  factory Chest.epic(int level) => Chest(
+    level: level,
+    shards: 60 + (level * 12),
+    rarity: 'épica',
+  );
+
+  factory Chest.legendary(int level) => Chest(
+    level: level,
+    shards: 100 + (level * 20),
+    rarity: 'lendária',
+  );
+
+  Color get color {
+    switch (rarity) {
+      case 'comum':
+        return const Color(0xFF8B8B9A);
+      case 'rara':
+        return DT.blue;
+      case 'épica':
+        return DT.violet;
+      case 'lendária':
+        return DT.gold;
+      default:
+        return DT.muted;
+    }
+  }
+
+  IconData get icon {
+    switch (rarity) {
+      case 'comum':
+        return Icons.card_giftcard_rounded;
+      case 'rara':
+        return Icons.card_giftcard_rounded;
+      case 'épica':
+        return Icons.card_giftcard_rounded;
+      case 'lendária':
+        return Icons.workspace_premium_rounded;
+      default:
+        return Icons.card_giftcard_rounded;
+    }
+  }
 }
 
 class PlayerStats {
@@ -49,6 +111,10 @@ class PlayerStats {
   bool shieldReady;
   int highestFloor;
   int checkpointFloor;
+  List<Chest> inventory;
+  int keyCount;
+  Set<int> usedQuestionsThisRun;
+  int milestoneLevelReached;
 
   PlayerStats({
     this.maxHp = 3,
@@ -68,6 +134,10 @@ class PlayerStats {
     this.shieldReady = false,
     this.highestFloor = 1,
     this.checkpointFloor = 1,
+    this.inventory = const [],
+    this.keyCount = 0,
+    this.usedQuestionsThisRun = const {},
+    this.milestoneLevelReached = 0,
   });
 
   bool get hasSiphon => siphonLevel > 0;
@@ -85,6 +155,8 @@ class PlayerStats {
     floor = max(1, checkpointFloor);
     runShards = 0;
     shieldReady = hasShield;
+    usedQuestionsThisRun.clear();
+    milestoneLevelReached = 0;
   }
 
   void gainExp(int amount) {
@@ -99,6 +171,29 @@ class PlayerStats {
     level++;
     maxHp += 1;
     currentHp = maxHp;
+    
+    // Check for milestone rewards every 10 levels
+    final milestone = (level ~/ 10);
+    if (milestone > milestoneLevelReached) {
+      milestoneLevelReached = milestone;
+    }
+  }
+
+  void addChestToInventory(Chest chest) {
+    inventory = [...inventory, chest];
+  }
+
+  int openChest(int index) {
+    if (index >= 0 && index < inventory.length) {
+      final chest = inventory[index];
+      inventory = inventory..removeAt(index);
+      return chest.shards;
+    }
+    return 0;
+  }
+
+  void addKey() {
+    keyCount++;
   }
 
   Map<String, dynamic> toJson() => {
@@ -116,6 +211,7 @@ class PlayerStats {
     'wealthLevel': wealthLevel,
     'highestFloor': highestFloor,
     'checkpointFloor': checkpointFloor,
+    'keyCount': keyCount,
   };
 
   static PlayerStats fromJson(Map<String, dynamic> json) => PlayerStats(
@@ -133,6 +229,7 @@ class PlayerStats {
     wealthLevel: json['wealthLevel'] ?? 0,
     highestFloor: json['highestFloor'] ?? 1,
     checkpointFloor: json['checkpointFloor'] ?? 1,
+    keyCount: json['keyCount'] ?? 0,
   );
 }
 
@@ -178,6 +275,28 @@ class QuestionBank {
       explanation: 'Flutter usa Skia para renderização rápida em todas as plataformas.',
       tier: 1,
     ),
+    const Question(
+      prompt: 'Qual versão do Flutter introduziu suporte para web?',
+      options: ['1.5', '1.9', '1.20', '2.0'],
+      correctIndex: 2,
+      explanation: 'Flutter 1.20 trouxe suporte experimental para web.',
+      tier: 1,
+    ),
+    const Question(
+      prompt: 'O Dart é estaticamente digitado?',
+      options: ['Nunca', 'Opcionalmente (sound null safety)', 'Apenas em web', 'Apenas em Android'],
+      correctIndex: 1,
+      explanation: 'Dart oferece digitação estática opcional com null safety.',
+      tier: 1,
+    ),
+    const Question(
+      prompt: 'Quantas plataformas diferentes o Flutter suporta?',
+      options: ['2 (iOS e Android)', '4', '6', 'Apenas móvel'],
+      correctIndex: 2,
+      explanation: 'Flutter suporta iOS, Android, Web, Desktop (Windows, Mac, Linux).',
+      tier: 1,
+    ),
+
     // Tier 2 - Mobile History
     const Question(
       prompt: 'Qual foi o primeiro smartphone?',
@@ -214,6 +333,28 @@ class QuestionBank {
       explanation: 'Android 1.0 foi lançado em setembro de 2008.',
       tier: 2,
     ),
+    const Question(
+      prompt: 'Qual é a resolução do iPhone original?',
+      options: ['320x240', '480x320', '640x960', '240x160'],
+      correctIndex: 1,
+      explanation: 'iPhone original tinha 480x320 pixels a 163 PPI.',
+      tier: 2,
+    ),
+    const Question(
+      prompt: 'Quando surgiu o Touch ID nos iPhones?',
+      options: ['2012', '2013', '2014', '2015'],
+      correctIndex: 2,
+      explanation: 'iPhone 5S em 2013 introduziu Touch ID.',
+      tier: 2,
+    ),
+    const Question(
+      prompt: 'Qual smartphone foi o primeiro com NFC?',
+      options: ['iPhone 6', 'Samsung Galaxy S3', 'Nokia N9', 'Samsung Galaxy Nexus'],
+      correctIndex: 2,
+      explanation: 'Nokia N9 foi um dos primeiros com NFC em 2011.',
+      tier: 2,
+    ),
+
     // Tier 3 - Flutter Advanced
     const Question(
       prompt: 'O que é um StatefulWidget em Flutter?',
@@ -265,6 +406,43 @@ class QuestionBank {
       explanation: 'GridView cria uma grade responsiva de widgets.',
       tier: 3,
     ),
+    const Question(
+      prompt: 'Qual é o objetivo do BuildContext?',
+      options: [
+        'Executar código assíncrono',
+        'Referenciar a posição do widget na árvore',
+        'Armazenar dados localmente',
+        'Compilar layouts'
+      ],
+      correctIndex: 1,
+      explanation: 'BuildContext referencia a posição do widget na árvore de widgets.',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'O que faz o método didUpdateWidget?',
+      options: [
+        'Atualiza o estado quando o widget é reconstruído',
+        'Destroi o widget',
+        'Inicia o widget',
+        'Renderiza a tela'
+      ],
+      correctIndex: 0,
+      explanation: 'didUpdateWidget é chamado quando o widget que contém o state é atualizado.',
+      tier: 3,
+    ),
+    const Question(
+      prompt: 'Qual é a diferença entre Scaffold e Container?',
+      options: [
+        'Não há diferença',
+        'Scaffold fornece estrutura completa de app com AppBar, Drawer, etc',
+        'Container é para desktop apenas',
+        'Scaffold não pode ter children'
+      ],
+      correctIndex: 1,
+      explanation: 'Scaffold é uma classe que implementa a estrutura visual do Material Design.',
+      tier: 3,
+    ),
+
     // Tier 4 - Mobile Evolution
     const Question(
       prompt: 'Quantos anos levou entre o primeiro iPhone e o 5G em smartphones?',
@@ -294,6 +472,35 @@ class QuestionBank {
       explanation: 'Java era a única opção oficial até Kotlin ser suportado.',
       tier: 4,
     ),
+    const Question(
+      prompt: 'Em que ano o Kotlin se tornou linguagem oficial no Android?',
+      options: ['2017', '2018', '2019', '2020'],
+      correctIndex: 1,
+      explanation: 'Google anunciou Kotlin como linguagem oficial em maio de 2019.',
+      tier: 4,
+    ),
+    const Question(
+      prompt: 'Qual foi o primeiro smartphone com 1GB de RAM?',
+      options: ['HTC Dream', 'HTC Desire', 'Samsung Galaxy S', 'iPhone 4'],
+      correctIndex: 1,
+      explanation: 'HTC Desire foi um dos primeiros com 1GB de RAM em 2010.',
+      tier: 4,
+    ),
+    const Question(
+      prompt: 'Quando foi lançado o primeiro App Store da Apple?',
+      options: ['2007', '2008', '2009', '2010'],
+      correctIndex: 1,
+      explanation: 'App Store foi lançado em julho de 2008 com o iPhone 3G.',
+      tier: 4,
+    ),
+    const Question(
+      prompt: 'Qual recurso o iPhone X introduziu que mudou design móvel?',
+      options: ['Bateria grande', 'Notch', 'Face ID', 'Todas as anteriores'],
+      correctIndex: 3,
+      explanation: 'iPhone X trouxe Notch, Face ID e mudou a forma de pensar design móvel.',
+      tier: 4,
+    ),
+
     // Tier 5 - Flutter Architecture
     const Question(
       prompt: 'Qual é a estrutura de camadas do Flutter?',
@@ -345,12 +552,62 @@ class QuestionBank {
       explanation: 'O Engine é implementado principalmente em C++ para performance.',
       tier: 5,
     ),
+    const Question(
+      prompt: 'O que são renderObjects em Flutter?',
+      options: [
+        'Widgets da UI',
+        'Objetos que realizam layout e renderização',
+        'Dados armazenados localmente',
+        'Serviços de rede'
+      ],
+      correctIndex: 1,
+      explanation: 'RenderObjects executam layout, painting e hit testing.',
+      tier: 5,
+    ),
+    const Question(
+      prompt: 'Qual é a diferença entre Element e RenderObject?',
+      options: [
+        'Não há diferença',
+        'Element gerencia configuração, RenderObject gerencia renderização',
+        'Element é apenas para iOS',
+        'RenderObject é apenas para Android'
+      ],
+      correctIndex: 1,
+      explanation: 'Element gerencia a configuração, RenderObject gerencia geometria e rendering.',
+      tier: 5,
+    ),
+    const Question(
+      prompt: 'O que é Composition over Inheritance em Flutter?',
+      options: [
+        'Usar herança de classes',
+        'Usar widgets aninhados ao invés de herança',
+        'Não usar classes',
+        'Usar apenas funções'
+      ],
+      correctIndex: 1,
+      explanation: 'Flutter favorece composição de widgets ao invés de herança de classes.',
+      tier: 5,
+    ),
   ];
 
-  static Question forFloor(int floor) {
+  static Question forFloor(int floor, Set<int> usedIndices) {
     final difficulty = _calculateDifficulty(floor);
-    final pool = _all.where((q) => q.tier <= difficulty).toList()..shuffle();
-    return pool.first;
+    final pool = _all
+        .asMap()
+        .entries
+        .where((e) => e.value.tier <= difficulty && !usedIndices.contains(e.key))
+        .map((e) => (index: e.key, question: e.value))
+        .toList()
+      ..shuffle();
+    
+    if (pool.isEmpty) {
+      // Se acabar as perguntas, limpa o histórico
+      usedIndices.clear();
+      return _all.where((q) => q.tier <= difficulty).toList()..shuffle();
+    }
+    
+    usedIndices.add(pool.first.index);
+    return pool.first.question;
   }
 
   static int _calculateDifficulty(int floor) {
@@ -437,6 +694,8 @@ class _GameControllerState extends State<GameController> {
 
   void _openSkillTree() => setState(() => _state = GameState.skillTree);
 
+  void _openInventory() => setState(() => _state = GameState.inventory);
+
   void _onDied() {
     if (_player.floor > _player.checkpointFloor) {
       _player.checkpointFloor = _player.floor;
@@ -445,16 +704,24 @@ class _GameControllerState extends State<GameController> {
     setState(() => _state = GameState.gameOver);
   }
 
-  void _onFloorCleared(int earned, int expEarned) {
+  void _onFloorCleared(int earned, int expEarned, Chest? chest, bool keyEarned) {
     _player.runShards += earned;
     _player.gainExp(expEarned);
+
+    if (chest != null) {
+      _player.addChestToInventory(chest);
+    }
+
+    if (keyEarned) {
+      _player.addKey();
+    }
 
     if (_player.floor > _player.highestFloor) {
       _player.highestFloor = _player.floor;
     }
 
     _player.floor++;
-    if (_player.floor > 20) {
+    if (_player.floor > 25) {
       _player.shards += _player.runShards;
       if (_player.floor > _player.checkpointFloor) {
         _player.checkpointFloor = _player.floor;
@@ -473,8 +740,13 @@ class _GameControllerState extends State<GameController> {
       player: _player,
       onStart: _startRun,
       onSkillTree: _player.shards > 0 ? _openSkillTree : null,
+      onInventory: _openInventory,
     ),
     GameState.skillTree => SkillTreeScreen(
+      player: _player,
+      onBack: () => setState(() => _state = GameState.menu),
+    ),
+    GameState.inventory => InventoryScreen(
       player: _player,
       onBack: () => setState(() => _state = GameState.menu),
     ),
@@ -487,6 +759,7 @@ class _GameControllerState extends State<GameController> {
     GameState.gameOver => GameOverScreen(
       player: _player,
       onSkillTree: _openSkillTree,
+      onInventory: _openInventory,
       onRestart: _startRun,
     ),
     GameState.victory => VictoryScreen(
@@ -497,6 +770,355 @@ class _GameControllerState extends State<GameController> {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  INVENTORY SCREEN
+// ─────────────────────────────────────────────────────────────
+
+class InventoryScreen extends StatefulWidget {
+  final PlayerStats player;
+  final VoidCallback onBack;
+
+  const InventoryScreen({
+    super.key,
+    required this.player,
+    required this.onBack,
+  });
+
+  @override
+  State<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends State<InventoryScreen> {
+  late List<Chest> _chests;
+  int _shardsFromOpenedChests = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _chests = List.from(widget.player.inventory);
+  }
+
+  void _openChest(int index) {
+    if (index >= 0 && index < _chests.length) {
+      final chest = _chests[index];
+      final shards = chest.shards;
+      
+      setState(() {
+        _chests.removeAt(index);
+        widget.player.inventory = _chests;
+        _shardsFromOpenedChests += shards;
+        widget.player.shards += shards;
+      });
+
+      showDialog(
+        context: context,
+        builder: (context) => ChestOpenDialog(chest: chest, shards: shards),
+      ).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalValue = _chests.fold<int>(0, (sum, chest) => sum + chest.shards);
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.3),
+            radius: 1.2,
+            colors: [Color(0xFF1A0F2E), DT.bg],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Row(
+                  children: [
+                    _IconBtn(
+                      icon: Icons.arrow_back_rounded,
+                      onTap: onBack,
+                    ),
+                    const SizedBox(width: 14),
+                    const Icon(Icons.card_giftcard_rounded, color: DT.gold, size: 17),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'INVENTÁRIO',
+                      style: TextStyle(
+                        color: DT.gold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.diamond_outlined, color: DT.cyan, size: 15),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${widget.player.shards}',
+                      style: const TextStyle(
+                        color: DT.cyan,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Abra seus baús para obter fragmentos! Total: $_shardsFromOpenedChests',
+                        style: DT.caption.copyWith(fontSize: 11),
+                      ),
+                    ),
+                    if (widget.player.keyCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: DT.gold.withOpacity(0.15),
+                            border: Border.all(color: DT.gold.withOpacity(0.4)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.vpn_key_rounded, size: 12, color: DT.gold),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${widget.player.keyCount}',
+                                style: const TextStyle(
+                                  color: DT.gold,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _chests.isEmpty
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 48,
+                        color: DT.muted.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Nenhum baú ainda',
+                        style: DT.caption.copyWith(fontSize: 13),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Complete andares para conseguir baús',
+                        style: DT.caption.copyWith(fontSize: 11, color: DT.muted),
+                      ),
+                    ],
+                  ),
+                )
+                    : GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: _chests.length,
+                  itemBuilder: (context, index) {
+                    final chest = _chests[index];
+                    return _ChestCard(
+                      chest: chest,
+                      onTap: () => _openChest(index),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChestCard extends StatelessWidget {
+  final Chest chest;
+  final VoidCallback onTap;
+
+  const _ChestCard({required this.chest, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: DT.surface,
+          border: Border.all(color: chest.color.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: chest.color.withOpacity(0.1),
+              blurRadius: 12,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(chest.icon, size: 40, color: chest.color),
+            const SizedBox(height: 8),
+            Text(
+              'Nível ${chest.level}',
+              style: TextStyle(
+                color: chest.color,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              chest.rarity,
+              style: TextStyle(
+                color: chest.color.withOpacity(0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: chest.color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${chest.shards} ◆',
+                style: TextStyle(
+                  color: chest.color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ChestOpenDialog extends StatelessWidget {
+  final Chest chest;
+  final int shards;
+
+  const ChestOpenDialog({required this.chest, required this.shards});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: DT.surface,
+          border: Border.all(color: chest.color.withOpacity(0.5), width: 2),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(chest.icon, size: 56, color: chest.color),
+            const SizedBox(height: 16),
+            Text(
+              'Baú ${chest.rarity.toUpperCase()}',
+              style: TextStyle(
+                color: chest.color,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Nível ${chest.level}',
+              style: DT.caption.copyWith(fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: chest.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: chest.color.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.diamond_rounded, size: 28, color: chest.color),
+                  const SizedBox(width: 12),
+                  Text(
+                    '+$shards',
+                    style: TextStyle(
+                      color: chest.color,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: chest.color.withOpacity(0.2),
+                  side: BorderSide(color: chest.color.withOpacity(0.6)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Coletar',
+                  style: TextStyle(
+                    color: chest.color,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 //  MENU SCREEN
 // ─────────────────────────────────────────────────────────────
 
@@ -504,12 +1126,14 @@ class MenuScreen extends StatefulWidget {
   final PlayerStats player;
   final VoidCallback onStart;
   final VoidCallback? onSkillTree;
+  final VoidCallback onInventory;
 
   const MenuScreen({
     super.key,
     required this.player,
     required this.onStart,
     this.onSkillTree,
+    required this.onInventory,
   });
 
   @override
@@ -632,6 +1256,13 @@ class _MenuScreenState extends State<MenuScreen>
                       onTap: widget.onSkillTree!,
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  _PrimaryBtn(
+                    icon: Icons.card_giftcard_rounded,
+                    label: 'INVENTÁRIO (${widget.player.inventory.length})',
+                    color: DT.blue,
+                    onTap: widget.onInventory,
+                  ),
                   const SizedBox(height: 40),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -645,7 +1276,7 @@ class _MenuScreenState extends State<MenuScreen>
                       _MiniStat(
                         icon: Icons.diamond_outlined,
                         iconColor: DT.cyan,
-                        label: '${widget.player.shards} fragmentos',
+                        label: '${widget.player.shards}',
                       ),
                       const SizedBox(width: 12),
                       _MiniStat(
@@ -846,7 +1477,7 @@ class _MiniStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  SKILL TREE SCREEN (ENHANCED SHOP)
+//  SKILL TREE SCREEN
 // ─────────────────────────────────────────────────────────────
 
 class SkillTreeScreen extends StatefulWidget {
@@ -862,11 +1493,11 @@ class SkillTreeScreen extends StatefulWidget {
 class _SkillTreeScreenState extends State<SkillTreeScreen> {
   PlayerStats get p => widget.player;
 
-  int get _vigorCost  => (p.vigorLevel  + 1) * 3;
-  int get _siphonCost => (p.siphonLevel + 1) * 4;
-  int get _armorCost  => (p.armorLevel + 1) * 5;
-  int get _focusCost  => (p.focusLevel + 1) * 6;
-  int get _wealthCost => (p.wealthLevel + 1) * 8;
+  int get _vigorCost  => (p.vigorLevel  + 1) * 4;
+  int get _siphonCost => (p.siphonLevel + 1) * 5;
+  int get _armorCost  => (p.armorLevel + 1) * 6;
+  int get _focusCost  => (p.focusLevel + 1) * 8;
+  int get _wealthCost => (p.wealthLevel + 1) * 10;
 
   void _buy(String id) {
     setState(() {
@@ -883,13 +1514,13 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
             p.siphonLevel++;
           }
         case 'oracle':
-          if (p.oracleLevel < 1 && p.shards >= 8) {
-            p.shards -= 8;
+          if (p.oracleLevel < 1 && p.shards >= 12) {
+            p.shards -= 12;
             p.oracleLevel = 1;
           }
         case 'shield':
-          if (p.shieldLevel < 1 && p.shards >= 10) {
-            p.shards -= 10;
+          if (p.shieldLevel < 1 && p.shards >= 15) {
+            p.shards -= 15;
             p.shieldLevel = 1;
           }
         case 'armor':
@@ -963,7 +1594,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
                 child: Text(
-                  'Os fragmentos persistem mesmo depois da morte. Mude-se após andar 10!',
+                  'Upgrade para ficar mais forte. Preços aumentam por nível!',
                   style: DT.caption.copyWith(fontSize: 11),
                 ),
               ),
@@ -1002,8 +1633,8 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       description: 'Uma opção falsa some de cada enigma.',
                       level: p.oracleLevel,
                       maxLevel: 1,
-                      cost: 8,
-                      canBuy: p.oracleLevel < 1 && p.shards >= 8,
+                      cost: 12,
+                      canBuy: p.oracleLevel < 1 && p.shards >= 12,
                       onBuy: () => _buy('oracle'),
                     ),
                     const SizedBox(height: 10),
@@ -1014,8 +1645,8 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       description: 'Absorve o primeiro erro a cada descida.',
                       level: p.shieldLevel,
                       maxLevel: 1,
-                      cost: 10,
-                      canBuy: p.shieldLevel < 1 && p.shards >= 10,
+                      cost: 15,
+                      canBuy: p.shieldLevel < 1 && p.shards >= 15,
                       onBuy: () => _buy('shield'),
                     ),
                     const SizedBox(height: 10),
@@ -1047,7 +1678,7 @@ class _SkillTreeScreenState extends State<SkillTreeScreen> {
                       icon: Icons.attach_money_rounded,
                       color: DT.gold,
                       name: 'Ganância do Tesouro',
-                      description: 'Aumenta fragmentos ganhos em 25% por nível.',
+                      description: 'Aumenta fragmentos ganhos em 30% por nível.',
                       level: p.wealthLevel,
                       maxLevel: 3,
                       cost: _wealthCost,
@@ -1216,7 +1847,7 @@ class _SkillCard extends StatelessWidget {
 class DungeonScreen extends StatefulWidget {
   final PlayerStats player;
   final VoidCallback onDied;
-  final Function(int, int) onFloorCleared;
+  final Function(int, int, Chest?, bool) onFloorCleared;
   final Function(int) onHpChanged;
 
   const DungeonScreen({
@@ -1273,7 +1904,7 @@ class _DungeonScreenState extends State<DungeonScreen>
   }
 
   void _load() {
-    _q = QuestionBank.forFloor(widget.player.floor);
+    _q = QuestionBank.forFloor(widget.player.floor, widget.player.usedQuestionsThisRun);
     _opts = List.from(_q.options);
 
     if (widget.player.hasOracle) {
@@ -1310,19 +1941,39 @@ class _DungeonScreenState extends State<DungeonScreen>
   }
 
   int _calculateReward() {
-    int base = max(1, p.floor ~/ 2 + 1);
+    int base = max(1, p.floor ~/ 3);
     if (p.wealthLevel > 0) {
-      base = (base * (1 + 0.25 * p.wealthLevel)).toInt();
+      base = (base * (1 + 0.30 * p.wealthLevel)).toInt();
     }
-    return base;
+    return max(1, base);
   }
 
   int _calculateExp() {
-    int base = 10 * p.floor;
+    int base = 15 * p.floor;
     if (p.focusLevel > 0) {
       base = (base * (1 + 0.25 * p.focusLevel)).toInt();
     }
     return base;
+  }
+
+  Chest? _getChestReward() {
+    final roll = Random().nextDouble();
+    final floor = p.floor;
+
+    if (roll < 0.15) {
+      return Chest.legendary(floor);
+    } else if (roll < 0.35) {
+      return Chest.epic(floor);
+    } else if (roll < 0.60) {
+      return Chest.rare(floor);
+    } else if (roll < 0.85) {
+      return Chest.common(floor);
+    }
+    return null;
+  }
+
+  bool _getMilestoneKey() {
+    return (p.floor % 10 == 0);
   }
 
   void _answer(int idx) {
@@ -1336,9 +1987,20 @@ class _DungeonScreenState extends State<DungeonScreen>
         _states[idx] = true;
         final earned = _calculateReward();
         final exp = _calculateExp();
+        final chest = _getChestReward();
+        final keyEarned = _getMilestoneKey();
+        
         _feedbackOk = true;
         _feedbackIcon = Icons.check_circle_rounded;
         _feedback = '+$earned fragmentos  +$exp XP  —  Correto.';
+
+        if (chest != null) {
+          _feedback += '  Baú ${chest.rarity}!';
+        }
+
+        if (keyEarned) {
+          _feedback += '  🔑 CHAVE OBTIDA!';
+        }
 
         if (p.hasSiphon && p.currentHp < p.maxHp) {
           p.currentHp = min(p.maxHp, p.currentHp + p.siphonLevel);
@@ -1348,7 +2010,7 @@ class _DungeonScreenState extends State<DungeonScreen>
 
         Future.delayed(const Duration(milliseconds: 1400), () {
           if (!mounted) return;
-          widget.onFloorCleared(earned, exp);
+          widget.onFloorCleared(earned, exp, chest, keyEarned);
           _entryCtrl.reset();
           setState(_load);
           _entryCtrl.forward();
@@ -1689,12 +2351,14 @@ class _ChoiceBtn extends StatelessWidget {
 class GameOverScreen extends StatelessWidget {
   final PlayerStats player;
   final VoidCallback onSkillTree;
+  final VoidCallback onInventory;
   final VoidCallback onRestart;
 
   const GameOverScreen({
     super.key,
     required this.player,
     required this.onSkillTree,
+    required this.onInventory,
     required this.onRestart,
   });
 
@@ -1775,12 +2439,25 @@ class GameOverScreen extends StatelessWidget {
                     label: 'Checkpoint',
                     value: 'Andar ${player.checkpointFloor}',
                   ),
+                  _StatRow(
+                    icon: Icons.card_giftcard_rounded,
+                    color: DT.purple,
+                    label: 'Baús coletados',
+                    value: '${player.inventory.length}',
+                  ),
                   const SizedBox(height: 40),
                   _PrimaryBtn(
                     icon: Icons.account_tree_outlined,
                     label: 'GASTAR FRAGMENTOS',
                     color: DT.violet,
                     onTap: onSkillTree,
+                  ),
+                  const SizedBox(height: 12),
+                  _PrimaryBtn(
+                    icon: Icons.card_giftcard_rounded,
+                    label: 'INVENTÁRIO',
+                    color: DT.blue,
+                    onTap: onInventory,
                   ),
                   const SizedBox(height: 12),
                   _PrimaryBtn(
@@ -1921,6 +2598,18 @@ class VictoryScreen extends StatelessWidget {
                     color: DT.blue,
                     label: 'Nível',
                     value: '${player.level}',
+                  ),
+                  _StatRow(
+                    icon: Icons.card_giftcard_rounded,
+                    color: DT.purple,
+                    label: 'Baús coletados',
+                    value: '${player.inventory.length}',
+                  ),
+                  _StatRow(
+                    icon: Icons.vpn_key_rounded,
+                    color: DT.gold,
+                    label: 'Chaves obtidas',
+                    value: '${player.keyCount}',
                   ),
                   const SizedBox(height: 40),
                   _PrimaryBtn(
