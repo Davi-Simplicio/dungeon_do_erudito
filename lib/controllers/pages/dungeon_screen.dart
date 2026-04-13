@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../constants/design_tokens.dart';
-import '../models/player_stats.dart';
-import '../models/question.dart';
+import '../../constants/design_tokens.dart';
+import '../../models/player_stats.dart';
+import '../../models/question.dart';
 
 class DungeonScreen extends StatefulWidget {
   final PlayerStats player;
