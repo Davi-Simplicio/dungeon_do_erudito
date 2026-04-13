@@ -4,8 +4,7 @@ import 'pages/menu_screen.dart';
 import 'pages/skill_tree_screen.dart';
 import 'pages/inventory_screen.dart';
 import 'pages/dungeon_screen.dart';
-import 'pages/game_over_screen.dart';
-import 'pages/victory_screen.dart';
+import 'pages/end_screen.dart';
 
 enum GameState { menu, skillTree, dungeon, gameOver, victory, inventory }
 
