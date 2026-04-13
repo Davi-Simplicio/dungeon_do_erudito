@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/design_tokens.dart';
-import '../../models/player_stats.dart';
+import '../models/player_stats.dart';
 import '../../components/buttons.dart';
 
 class SkillTreeScreen extends StatefulWidget {
