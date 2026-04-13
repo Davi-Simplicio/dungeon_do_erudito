@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'constants/design_tokens.dart';
-import 'controllers/game_controller.dart';
+import 'design_tokens.dart';
+import 'game_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
