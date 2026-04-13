@@ -73,7 +73,7 @@ class PlayerStats {
     this.checkpointFloor = 1,
     this.inventory = const [],
     this.keyCount = 0,
-    this.usedQuestionsThisRun = const <int>{},
+    this.usedQuestionsThisRun = const {},
     this.milestoneLevelReached = 0,
   });
 
