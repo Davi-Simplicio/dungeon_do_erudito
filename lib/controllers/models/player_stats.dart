@@ -50,7 +50,7 @@ class PlayerStats {
   int checkpointFloor;
   List<Chest> inventory;
   int keyCount;
-  Set<int> sThisRun;
+  Set<int> usedQuestionThisRun;
   int milestoneLevelReached;
 
   PlayerStats({
@@ -73,7 +73,7 @@ class PlayerStats {
     this.checkpointFloor = 1,
     this.inventory = const [],
     this.keyCount = 0,
-    this.usedQuestionsThisRun = const {},
+    this.usedQuestionusedQuestionThisRun = const {},
     this.milestoneLevelReached = 0,
   });
 
@@ -92,7 +92,7 @@ class PlayerStats {
     floor = (checkpointFloor > 0) ? checkpointFloor : 1;
     runShards = 0;
     shieldReady = hasShield;
-    usedQuestionsThisRun = <int>{};
+    usedQuestionusedQuestionThisRun = <int>{};
     milestoneLevelReached = 0;
   }
 
