@@ -69,7 +69,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   children: [
                     IconButtonStyled(
                       icon: Icons.arrow_back_rounded,
-                      onTap: onBack,
+                      onTap: widget.onBack,
                     ),
                     const SizedBox(width: 14),
                     const Icon(Icons.card_giftcard_rounded, color: DT.gold, size: 17),
