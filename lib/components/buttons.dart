@@ -51,11 +51,11 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-class IconButton extends StatelessWidget {
+class IconButtonStyled extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const IconButton({
+  const IconButtonStyled({
     required this.icon,
     required this.onTap,
     super.key,
